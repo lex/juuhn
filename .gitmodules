@@ -1,0 +1,3 @@
+[submodule "juuhn/lib/HackerSwifter"]
+	path = juuhn/lib/HackerSwifter
+	url = https://github.com/Dimillian/HackerSwifter
