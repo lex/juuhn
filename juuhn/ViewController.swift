@@ -7,8 +7,6 @@
 //
 
 import UIKit
-import Alamofire
-import Kanna
 
 class StoryTableViewCell: UITableViewCell {
     @IBOutlet weak var title: UILabel!
@@ -18,7 +16,8 @@ class StoryTableViewCell: UITableViewCell {
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var newsTableView: UITableView!
 
-    var stories: [(String, String, String, String, String)] = []
+    let scraper = HNScraper()
+    var stories: [Story] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,40 +25,15 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.newsTableView.dataSource = self
         self.newsTableView.delegate = self
 
-        scrapeHN();
-    }
-    
-    func scrapeHN() {
-        let url = "https://news.ycombinator.com";
-        
-        Alamofire.request(url).responseString { response in
-            if let html = response.result.value {
-                do {
-                    try self.parseHTML(html: html)
-                } catch {
-                    print("rip")
-                }
+        scraper.scrapeTop(completionHandler: { stories in
+            guard let stories = stories else {
+                print("something went wrong")
+                return
             }
-        }
-    }
-    
-    func parseHTML(html: String) throws {
-        let doc = try Kanna.HTML(html: html, encoding: String.Encoding.utf8)
-        var titles: [String?] = doc.css(".storylink").map { title in title.text }
-        
-        let subtexts = doc.css(".subtext")
-        for subtext in subtexts {
-            if let title = titles.removeFirst(),
-                let score = subtext.css(".score").first?.text,
-                let user = subtext.css(".hnuser").first?.text,
-                let age = subtext.css(".age").first?.text,
-                let comments = subtext.css("a").reversed().first?.text {
-                stories.append((title, score, user, age, comments))
-            }
-        }
-        
-        print(stories)
-        self.newsTableView.reloadData()
+
+            self.stories = stories
+            self.newsTableView.reloadData()
+        })
     }
 
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -75,8 +49,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let story = stories[index]
 
         let cell = self.newsTableView.dequeueReusableCell(withIdentifier: "StoryCell", for: indexPath) as! StoryTableViewCell
-        cell.title.text = story.0
-        cell.subtext.text = "\(story.1) by \(story.2) \(story.3) | \(story.4)"
+        cell.title.text = story.title
+        cell.subtext.text = "\(story.score) by \(story.user) \(story.age) | \(story.comments)"
 
         return cell
     }
