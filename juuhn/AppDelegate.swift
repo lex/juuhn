@@ -10,12 +10,22 @@ import UIKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
     var window: UIWindow?
-
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        guard let splitViewController = window?.rootViewController as? UISplitViewController,
+            let leftNavigationController = splitViewController.viewControllers.first as? UINavigationController,
+            let masterViewController = leftNavigationController.topViewController as? TopStoriesViewController,
+            let rightNavigationController = splitViewController.viewControllers.last as? UINavigationController,
+            let detailViewController = rightNavigationController.topViewController as? StoryViewController
+            else { fatalError() }
+
+        masterViewController.storySelectionDelegate = detailViewController
+
+        detailViewController.navigationItem.leftItemsSupplementBackButton = true
+        detailViewController.navigationItem.leftBarButtonItem = splitViewController.displayModeButtonItem
+
         return true
     }
 

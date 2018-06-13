@@ -6,7 +6,6 @@
 //  Copyright © 2018 Yuuh Ltd. All rights reserved.
 //
 
-import Foundation
 import Alamofire
 import Kanna
 
@@ -16,18 +15,20 @@ class Story {
     let user: String
     let age: String
     let comments: String
+    let site: String
 
-    init(title: String, score: String, user: String, age: String, comments: String) {
+    init(title: String, score: String, user: String, age: String, comments: String, site: String) {
         self.title = title
         self.score = score
         self.user = user
         self.age = age
         self.comments = comments
+        self.site = site
     }
 }
 
 class HNScraper {
-    let URL_TOP = "https://news.ycombinator.com";
+    let URL_TOP = "https://news.ycombinator.com"
 
     func scrapeTop(completionHandler: @escaping ([Story]?) -> Void) {
         Alamofire.request(URL_TOP).responseString { response in
@@ -39,26 +40,33 @@ class HNScraper {
                     print("rip")
                     completionHandler(nil)
                 }
+            } else {
+                completionHandler(nil)
             }
-
-            completionHandler(nil)
         }
     }
 
+    // TODO: make this more reliable please
     func parseTop(html: String) throws -> [Story] {
         var stories: [Story] = []
 
         let doc = try Kanna.HTML(html: html, encoding: String.Encoding.utf8)
         var titles: [String?] = doc.css(".storylink").map { title in title.text }
+        var sites: [String?] = doc.css(".sitestr").map { site in site.text }
 
         let subtexts = doc.css(".subtext")
         for subtext in subtexts {
+            if titles.isEmpty || sites.isEmpty {
+                break
+            }
+
             if let title = titles.removeFirst(),
+                let site = sites.removeFirst(),
                 let score = subtext.css(".score").first?.text,
                 let user = subtext.css(".hnuser").first?.text,
                 let age = subtext.css(".age").first?.text,
                 let comments = subtext.css("a").reversed().first?.text {
-                let story = Story(title: title, score: score, user: user, age: age, comments: comments)
+                let story = Story(title: title, score: score, user: user, age: age, comments: comments, site: site)
                 stories.append(story)
             }
         }

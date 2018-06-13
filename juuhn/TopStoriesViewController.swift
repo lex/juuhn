@@ -13,8 +13,13 @@ class StoryTableViewCell: UITableViewCell {
     @IBOutlet weak var subtext: UILabel!
 }
 
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+protocol StorySelectionDelegate: class {
+    func storySelected(_ newStory: Story)
+}
+
+class TopStoriesViewController: UIViewController {
     @IBOutlet weak var newsTableView: UITableView!
+    weak var storySelectionDelegate: StorySelectionDelegate?
 
     let scraper = HNScraper()
     var stories: [Story] = []
@@ -36,6 +41,13 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         })
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+}
+
+extension TopStoriesViewController: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
@@ -55,8 +67,15 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return cell
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let story = self.stories[indexPath.row]
+        self.storySelectionDelegate?.storySelected(story)
+
+        guard let storyViewController = self.storySelectionDelegate as? StoryViewController,
+            let storyNavigationController = storyViewController.navigationController else {
+                return
+        }
+
+        self.splitViewController?.showDetailViewController(storyNavigationController, sender: nil)
     }
 }
